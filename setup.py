@@ -13,7 +13,7 @@ setup(
     description='A library to store schema-less data in relational databases',
     packages=['waffle'],
     classifiers = [
-        'Development Status :: 1 - Alpha',
+        'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: GNU Library or Lesser General Public License (LGPL)',
         'Programming Language :: Python',
