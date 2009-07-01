@@ -13,6 +13,7 @@ from sqlalchemy import sql
 from sqlalchemy.sql import visitors
 
 from codecs import *
+from shardstrategy import *
 
 class IndexList(list):
     """A helper class to Entity to provide by name lookup for indices... 
@@ -161,25 +162,6 @@ class Entity(object):
                 break
         ids = set(i.id for i in index_vals)
         return self.lookup(ids)
-
-class IndexShardStrategy(object):
-    """A strategy for sharding index values and queries
-    """ 
-    def __init__(self, engines):
-        self.engines = engines
-
-    def engines_for_record_mapping(self, record, mapping):
-        """Get the engine for a record and mapping"""
-        raise NotImplementedError("subclasses should implement engine_for_record_mapping")
-
-    def engines_for_clauses(self, clauses):
-        """Get all of the engines for a query"""
-        return self.engines
-
-class ShardByPrimaryKey(IndexShardStrategy):
-    """An index shard strategy for grouping index values by record id"""
-    def engine_for_record_mapping(self, record, mapping):
-        return self.engines[record.id.int % len(self.engines)]
 
 class Index(object):
     """A persistent database index for index values 
