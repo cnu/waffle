@@ -1,5 +1,10 @@
 build
 dist
-*.pyc
-**/*.pyc
-
+*.a
+*.o
+*.py[co]
+*.so
+*.sw[nop]
+*~
+.#*
+[#]*#
