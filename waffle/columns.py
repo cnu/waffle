@@ -5,6 +5,7 @@
 """
 
 import uuid
+import zlib
 
 import sqlalchemy
 
@@ -16,21 +17,28 @@ class BinaryEncodedColumn(sqlalchemy.types.TypeDecorator):
     """
     impl = sqlalchemy.Binary
 
-    def __init__(self, codec):  
+    def __init__(self, codec, compress=False):  
         self.codec = codec
+        self.compress = compress
         super(BinaryEncodedColumn, self).__init__()
 
     def process_bind_param(self, value, dialect=None):
         if value is None:
             return None
         else:
-            return self.codec.encode(value)
+            value = self.codec.encode(value)
+            if self.compress:
+                return zlib.compress(value)
+            else:
+                return value
 
     def process_result_value(self, value, dialect=None):
         if value is None:
             return None
         else:
-            return self.codec.decode(value)
+            if self.compress:
+                value = zlib.decompress(value)
+            return value
 
 class UUIDColumn(sqlalchemy.types.TypeDecorator):
     """A SQLAlchemy column for storing UUID values"""

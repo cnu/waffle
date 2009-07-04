@@ -22,7 +22,7 @@ event_day_idx = waffle.Index('event_day',
         shard=waffle.ShardByPrimaryKey(engines),
         mapper=to_days)
 
-events = waffle.Entity('event', engines=engines, indices=[event_user_idx, event_day_idx])
+events = waffle.Entity('event', engines=engines, indices=[event_user_idx, event_day_idx], compress=True)
 
 events.create()
 

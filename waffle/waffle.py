@@ -41,19 +41,21 @@ class Entity(object):
     indices -- [waffle.Index], this is a list of indexes to be kept up to date
         whenever a Record is saved
     record_class -- subclass of waffle.Record, the main object record class; for instance, for a 'user' entity, one might have a User type that provides useful methods relating to operating on user properties.  Defaults to waffle.Record
+    compress -- whether to use zlib compression on the value stored. (True/False)
     """
-    def __init__(self, name, codec=JSONCodec(), engines=None, indices=None, record_class=None):
+    def __init__(self, name, codec=JSONCodec(), engines=None, indices=None, record_class=None, compress=False):
         self.name = unicode(name)
         self.codec = codec
         self.engines = list(engines)
         self.indices = IndexList(list(indices) if indices is not None else [])
         self.record_class = record_class if record_class is not None else Record
+        self.compress = compress
         self.table = sqlalchemy.Table(
                 name, 
                 sqlalchemy.MetaData(),
                 sqlalchemy.Column('increment_id', sqlalchemy.Integer, primary_key=True),
                 sqlalchemy.Column('id', UUIDColumn(), unique=True, index=True),
-                sqlalchemy.Column('body', BinaryEncodedColumn(codec)),
+                sqlalchemy.Column('body', BinaryEncodedColumn(codec, compress=compress)),
                 sqlalchemy.Column('updated', sqlalchemy.DATETIME(), default=datetime.datetime.now, onupdate=datetime.datetime.now),
                 sqlalchemy.Column('created', sqlalchemy.DATETIME(), default=datetime.datetime.now)
             )
