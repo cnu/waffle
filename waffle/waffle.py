@@ -128,7 +128,7 @@ class Entity(object):
         
         records = []
         for r in result:
-            rec = self.record_class(id=r.id, value=r.body, created=r.created, updated=r.updated)
+            rec = self.record_class(id=r.id, value=self.codec.decode(r.body), created=r.created, updated=r.updated)
             records.append(rec)
         return records
 
