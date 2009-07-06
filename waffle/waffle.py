@@ -41,14 +41,16 @@ class Entity(object):
     indices -- [waffle.Index], this is a list of indexes to be kept up to date
         whenever a Record is saved
     record_class -- subclass of waffle.Record, the main object record class; for instance, for a 'user' entity, one might have a User type that provides useful methods relating to operating on user properties.  Defaults to waffle.Record
+    shard -- a subclass of IndexShardStrategy.  The strategy for picking shards for queries and index values.  For instance the ShardByPrimaryKey strategy groups all of the values for the same Record on one shard.
     compress -- whether to use zlib compression on the value stored. (True/False)
     """
-    def __init__(self, name, codec=JSONCodec(), engines=None, indices=None, record_class=None, compress=False):
+    def __init__(self, name, codec=JSONCodec(), engines=None, indices=None, record_class=None, shard=ShardByPrimaryKey, compress=False):
         self.name = unicode(name)
         self.codec = codec
         self.engines = list(engines)
         self.indices = IndexList(list(indices) if indices is not None else [])
         self.record_class = record_class if record_class is not None else Record
+        self.shard = shard(engines)
         self.compress = compress
         self.table = sqlalchemy.Table(
                 name, 
@@ -72,24 +74,13 @@ class Entity(object):
         for index in self.indices:
             index.create()
 
-    def engine_for_uuid(self, uuid):
-        """Bucket a UUID to a engine shard
-        
-        Override this if you want to control which object goes to which engine
-        shard.  This implementation simply finds the modulus of the UUID's
-        integer and the number of engines.  This should be reasonably
-        distributed and easy to make consistent across platforms.
-        """
-        num = len(self.engines)
-        return self.engines[uuid.int % num]
-
     def save(self, record):
         """Save a record in the data store
         
         Arguments
         record -- Record, the record to be saved
         """
-        engine = self.engine_for_uuid(record.id)
+        engine = self.shard.engine_for_record_mapping(record)
         conn = engine.connect()
         trx = conn.begin()
         assert record.id and record.id.bytes
@@ -117,7 +108,7 @@ class Entity(object):
         shards = defaultdict(set)
         num = len(self.engines)
         for record_id in record_ids:
-            shards[self.engines[record_id.int % num]].add(record_id)    
+            shards[self.engines[self.shard.hashfunc(record_id.int)]].add(record_id)    
 
         result = []
         for engine, sub_record_ids in shards.iteritems():

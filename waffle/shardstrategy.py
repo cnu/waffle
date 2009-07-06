@@ -8,8 +8,9 @@ class IndexShardStrategy(object):
     """ 
     def __init__(self, engines):
         self.engines = engines
+        self.num_engines = len(engines)
 
-    def engines_for_record_mapping(self, record, mapping):
+    def engines_for_record_mapping(self, record, mapping={}):
         """Get the engine for a record and mapping"""
         raise NotImplementedError("subclasses should implement engine_for_record_mapping")
 
@@ -19,8 +20,13 @@ class IndexShardStrategy(object):
 
 class ShardByPrimaryKey(IndexShardStrategy):
     """An index shard strategy for grouping index values by record id"""
-    def engine_for_record_mapping(self, record, mapping):
-        return self.engines[record.id.int % len(self.engines)]
+    def hashfunc(self, key):
+        """Given a key/id return back the id of the element to hash to
+        """
+        return key % self.num_engines
+    
+    def engine_for_record_mapping(self, record, mapping={}):
+        return self.engines[self.hashfunc(record.id.int)]
 
 
 __all__ = [
